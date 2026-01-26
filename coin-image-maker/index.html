@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>TAPBIT 계산기</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; }
+    h2 { margin: 0 0 12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+    input, select, button { padding: 8px; }
+    .muted { color:#666; font-size:12px; line-height:1.5; }
+    #out { border-radius:14px; border:1px solid #ddd; display:block; margin-top:12px; }
+    #result { margin-top:12px; border:1px solid #ddd; border-radius:12px; padding:10px; width:720px; box-sizing:border-box; }
+  </style>
+</head>
+<body>
+
+<h2>TAPBIT 계산기</h2>
+<div class="muted">
+  ✅ file:// 말고 VSCode Live Server로 여세요. (127.0.0.1:5500 형태)
+</div>
+
+<div class="row">
+  <label>코인</label>
+  <select id="coin">
+    <option value="BTC">BTC</option>
+    <option value="ETH">ETH</option>
+  </select>
+
+  <label>거래시간</label>
+  <input type="datetime-local" id="tradeTime" step="1">
+</div>
+
+<div class="row">
+  <input type="number" id="entryPrice" placeholder="진입가(USDT)" step="0.1">
+  <input type="number" id="closePrice" placeholder="매도가/종가(USDT)" step="0.1">
+  <input type="number" id="investment" placeholder="투자금(USDT)" step="0.01">
+  <input type="number" id="leverage" placeholder="레버리지(10/30/50)" step="1">
+</div>
+
+<div class="row">
+  <label><input type="radio" name="position" value="long" checked> 롱</label>
+  <label><input type="radio" name="position" value="short"> 숏</label>
+
+  <button id="btnCalcRender" type="button">계산+렌더</button>
+  <button id="btnSavePng" type="button">PNG 저장</button>
+</div>
+
+<div id="result">에셋 로딩 대기중...</div>
+
+<canvas id="out" width="720" height="1184"></canvas>
+
+<script src="app.js"></script>
+</body>
+</html>
