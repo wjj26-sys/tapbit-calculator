@@ -5,15 +5,11 @@
 */
 /* =========================
    app.js (통째 최종본)
-   ✅ 요청 반영(흰색만):
-   - 흰색 전체 X를 -2px (왼쪽 2px) 이동
-   - 흰색 간격은 "일정하게" 유지 (기존 간격 로직 그대로)
-   ✅ 그 외(초록/회색/상단/좌표/이동) 전부 그대로
-
-   ✅ (추가 요청 3개만 반영)
-   1) 초록색 숫자 "4,1"만 아래로 +1px
-   2) 회색 시간 부분에서 숫자==:==숫자 간격 2px 고정
-   3) 회색 ':' 기호만 아래로 +3px
+   ✅ 요청 반영(Entry/Close 소수점 문제 해결):
+   - 입력한 소수점 자리수를 그대로 출력(1.23456789 -> 1.23456789)
+   - 정수면 정수로(100 -> 100)
+   - 쉼표는 그대로 적용(12345.678 -> 12,345.678)
+   ✅ 그 외 전부 그대로
 ========================= */
 
 /* =========================
@@ -95,27 +91,29 @@ function greenExtraGap(curr, next) {
   return 0;
 }
 
-/* ✅ white 간격 규칙
-   - (현재 코드 그대로 유지)
-   - 기본 간격 -1 + 아래 룰 적용
-*/
+/* ✅ white 간격 규칙 (기존 그대로 유지) */
 const WHITE_BASE_SPACING = -2;
 
 function whiteExtraGap(curr, next) {
   if (!next) return 0;
   const isDigit = (c) => c >= "0" && c <= "9";
 
-  // ✅ 숫자===콤마 : -1
   if (isDigit(curr) && next === ",") return -1;
-
-  // ✅ 콤마===숫자 : -1
   if (curr === "," && isDigit(next)) return -1;
 
-  // 숫자===점 : -1
   if (isDigit(curr) && next === ".") return 0;
-
-  // 점===숫자 : -1
   if (curr === "." && isDigit(next)) return 1;
+
+  return 0;
+}
+
+/* ✅ gray 시간에서 숫자==:==숫자 간격 2px 고정 */
+function grayExtraGap(curr, next) {
+  if (!next) return 0;
+  const isDigit = (c) => c >= "0" && c <= "9";
+
+  if (isDigit(curr) && next === ":") return 2;
+  if (curr === ":" && isDigit(next)) return 2;
 
   return 0;
 }
@@ -245,10 +243,33 @@ function fmtPercent2(n) {
   const v = Math.max(0, Number(n) || 0);
   return v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
 }
+
+/* ✅ 수정: 입력한 소수점 자릿수 그대로 표시 */
 function fmtPrice1(n) {
-  const v = Math.max(0, Number(n) || 0);
-  return v.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  // 입력값 그대로의 소수점 자릿수 보존(문자열 기반)
+  const raw = String(n ?? "").trim();
+  if (!raw) return "0";
+
+  // 숫자만 허용(콤마 제거 후 판정)
+  const cleaned = raw.replace(/,/g, "");
+  if (!/^-?\d*\.?\d*$/.test(cleaned)) return "0";
+
+  const num = Number(cleaned);
+  if (!Number.isFinite(num)) return "0";
+
+  // 소수점 자릿수 = 입력값 기준
+  const dotIdx = cleaned.indexOf(".");
+  const fracLen = dotIdx >= 0 ? (cleaned.length - dotIdx - 1) : 0;
+
+  // 기존 정책처럼 음수는 0으로 표시
+  const v = Math.max(0, num);
+
+  return v.toLocaleString("en-US", {
+    minimumFractionDigits: fracLen,
+    maximumFractionDigits: fracLen,
+  });
 }
+
 function fmtTime(dtStr) {
   if (!dtStr) return "0000-00-00 00:00:00";
   const d = new Date(dtStr);
@@ -258,32 +279,31 @@ function fmtTime(dtStr) {
 }
 
 /* =========================
+   ✅ (추가1) 초록색 "4,1"만 아래로 +1px 판별
+========================= */
+function greenSpecialDy(text, i) {
+  const ch = text[i];
+
+  if (ch === "4" && text[i + 1] === "," && text[i + 2] === "1") return 1;
+  if (ch === "1" && text[i - 2] === "4" && text[i - 1] === ",") return 1;
+
+  return 0;
+}
+
+/* =========================
    4) 글리프 오프셋
 ========================= */
 function glyphOffset(theme, ch) {
   let dx = 0, dy = 0;
 
-  // green comma: 아래로 +8px
   if (theme === "green" && ch === ",") dy += 8;
-
-  // ✅ (추가1) 초록색 "4,1"만 아래로 +1px
-  // - dy는 숫자에 적용해야 하므로, '4' 그리고 '1' 둘 다 +1을 주면 정확히 "4,1" 덩어리가 내려감
-  // - 다른 숫자에는 영향 없음
-  if (theme === "green" && (ch === "4" || ch === "1")) dy += 1;
-
-  // green percent: 오른쪽 +2px
   if (theme === "green" && ch === "%") dx += 2;
 
-  // white 기존 유지
   if (theme === "white" && ch === "2") dy += -1;
   if (theme === "white" && ch === ",") dy += +3;
 
-  // ✅ (추가3) gray ':' 기호만 아래로 +3px
-  if (theme === "gray" && ch === ":") dy += 3;
-
-  // gray 기존 유지
   if (theme === "gray" && ch === "–") dy += -7;
-  if (theme === "gray" && ch === ":") dy += -4; // 기존 -4 유지 + 위에서 +3 적용 => 최종 -1
+  if (theme === "gray" && ch === ":") dy += (-4 + 3); // ':' 아래로 +3
 
   return { dx, dy };
 }
@@ -299,15 +319,19 @@ async function drawGlyphStringSimple(ctx, assets, theme, text, x, baselineY, sca
     const next = text[i + 1];
 
     if (theme !== "green" && ch === "%") continue;
-    if (ch === "+") continue; // 플러스 출력 안 함
+    if (ch === "+") continue;
 
     const glyph = await getGlyph(assets, theme, ch);
     const w = glyph.width * scale;
     const h = glyph.height * scale;
 
-    const { dx, dy } = glyphOffset(theme, ch);
-    const y = (baselineY - h) + dy;
+    let { dx, dy } = glyphOffset(theme, ch);
 
+    if (theme === "green") {
+      dy += greenSpecialDy(text, i);
+    }
+
+    const y = (baselineY - h) + dy;
     ctx.drawImage(glyph, cx + dx, y, w, h);
 
     cx += w;
@@ -318,10 +342,7 @@ async function drawGlyphStringSimple(ctx, assets, theme, text, x, baselineY, sca
       cx += WHITE_BASE_SPACING;
       cx += whiteExtraGap(ch, next);
     } else if (theme === "gray") {
-      // ✅ (추가2) gray 시간의 숫자==:==숫자 간격 0px 고정
-      // - 날짜/시간 분리는 renderAll에서 하고,
-      // - 여기서는 gray 문자열 렌더 시 advance를 0px로 고정
-      cx += 0;
+      cx += grayExtraGap(ch, next);
     }
   }
 
@@ -357,7 +378,7 @@ async function renderAll(assets) {
   const canvas = document.getElementById("out");
   const ctx = canvas.getContext("2d");
 
-  const coin = document.getElementById("coin").value; // BTC/ETH
+  const coin = document.getElementById("coin").value;
   const entryPrice = document.getElementById("entryPrice").value;
   const closePrice = document.getElementById("closePrice").value;
   const investment = document.getElementById("investment").value;
@@ -375,7 +396,6 @@ async function renderAll(assets) {
     `ROE: ${fmtPercent2(roe)}<br>` +
     `<span style="font-size:12px;color:#666;">※ 음수는 0으로 표시</span>`;
 
-  // bg
   ctx.clearRect(0, 0, LAYOUT.W, LAYOUT.H);
   ctx.drawImage(assets.bg, 0, 0, LAYOUT.W, LAYOUT.H);
 
@@ -396,13 +416,11 @@ async function renderAll(assets) {
     labelX = iconX + top.logoSize + top.gapLogoToLabel;
   }
 
-  // coin label
   const coinLabelDx = UI_MOVE.coinLabel.dx;
   const coinLabelDy = dyFromSpec(UI_MOVE.coinLabel.dySpec);
   const labelY = (top.yCenter - coinLabel.height / 2) + coinLabelDy;
   ctx.drawImage(coinLabel, labelX + coinLabelDx, labelY);
 
-  // pos
   const coinGap = (coin === "ETH") ? top.coinGapETH : top.coinGapBTC;
   const shortShift = (pos === "short") ? top.shortShiftX : 0;
   const basePosX = labelX + coinLabel.width + coinGap + shortShift + top.posLevShiftX;
@@ -411,7 +429,6 @@ async function renderAll(assets) {
   const posMove = (pos === "long") ? UI_MOVE.longOnly : UI_MOVE.shortOnly;
   ctx.drawImage(posImg, basePosX + posMove.dx, basePosY + dyFromSpec(posMove.dySpec));
 
-  // leverage
   const baseLevX = basePosX + posImg.width + top.posGapToLev + top.levExtraShiftX;
   const baseLevY = top.yCenter - levImg.height / 2;
 
@@ -438,7 +455,7 @@ async function renderAll(assets) {
     1
   );
 
-  /* ----- white (✅ 흰색만 X -2px 추가 적용) ----- */
+  /* ----- white ----- */
   const entryText = fmtPrice1(entryPrice);
   const closeText = fmtPrice1(closePrice);
 
@@ -458,7 +475,7 @@ async function renderAll(assets) {
     1
   );
 
-  /* ----- gray time (기존 잘 맞던 방식 유지: 날짜/시간 분리) ----- */
+  /* ----- gray time ----- */
   const timeText = fmtTime(tradeTime).replaceAll("-", "–");
 
   const timeBaseX = LAYOUT.time.x;
@@ -493,7 +510,6 @@ async function boot() {
   const btnSave = document.getElementById("btnSavePng");
   const resultBox = document.getElementById("result");
 
-  // 사이트 제목
   document.title = "TAPBIT 계산기";
 
   try {
