@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>TAPBIT 계산기</title>
+  <style>
+    :root{
+      --w: 720px;
+      --gap: 10px;
+      --radius: 14px;
+      --border: #e6e6e6;
+      --bg: #f7f7f8;
+      --text: #111;
+      --muted: #666;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 22px 14px 40px;
+    }
+
+    .wrap{
+      max-width: calc(var(--w) + 40px);
+      margin: 0 auto;
+    }
+
+    .header{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    h2{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: -0.2px;
+    }
+
+    .muted{
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .card{
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .row{
+      display:flex;
+      gap: var(--gap);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .row + .row{ margin-top: 10px; }
+
+    label.small{
+      font-size: 12px;
+      color: var(--muted);
+      display:block;
+      margin-bottom: 6px;
+    }
+
+    input, select, button{
+      height: 40px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      outline: none;
+      font-size: 14px;
+    }
+
+    input:focus, select:focus{
+      border-color: #c9c9c9;
+      box-shadow: 0 0 0 3px rgba(0,0,0,.06);
+    }
+
+    button{
+      cursor:pointer;
+      font-weight: 600;
+      border-color:#d9d9d9;
+      background: #111;
+      color: #fff;
+    }
+    button.secondary{
+      background:#fff;
+      color:#111;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 180px 1fr;
+      gap: 12px;
+      align-items:start;
+    }
+
+    .leftCol .field + .field{ margin-top: 10px; }
+    .field{ min-width: 0; }
+
+    .rightCol{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .rightCol .field:nth-child(3),
+    .rightCol .field:nth-child(4){
+      grid-column: span 1;
+    }
+
+    .full{ width: 100%; }
+    .w720{
+      width: min(100%, var(--w));
+      margin: 0 auto;
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-top: 12px;
+    }
+
+    .radioGroup{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+    .radioGroup label{
+      display:flex;
+      gap: 6px;
+      align-items:center;
+      font-size: 14px;
+      color:#222;
+      user-select:none;
+    }
+
+    #result{
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      width: min(100%, var(--w));
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    #out{
+      width: min(100%, var(--w));
+      height: auto;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      display:block;
+      margin: 12px auto 0;
+      background:#fff;
+      box-shadow: var(--shadow);
+    }
+
+    /* 반응형: 화면이 좁으면 한 줄씩 */
+    @media (max-width: 780px){
+      .controls{ grid-template-columns: 1fr; }
+      .rightCol{ grid-template-columns: 1fr; }
+      .header{ flex-direction: column; align-items:flex-start; }
+      button{ width: 100%; }
+      .actions{ gap: 8px; }
+      .radioGroup{ width: 100%; justify-content:center; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h2>TAPBIT 계산기</h2>
+        <div class="muted">✅ file:// 말고 VSCode Live Server로 여세요. (127.0.0.1:5500 형태)</div>
+      </div>
+    </div>
+
+    <div class="card w720">
+      <div class="controls">
+        <!-- 왼쪽: 코인/거래시간/모드 -->
+        <div class="leftCol">
+          <div class="field">
+            <label class="small">코인</label>
+            <select id="coin" class="full">
+              <option value="BTC">BTC</option>
+              <option value="ETH">ETH</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="small">거래시간</label>
+            <input type="datetime-local" id="tradeTime" step="1" class="full">
+          </div>
+
+          <div class="field">
+            <label class="small">표시 모드</label>
+            <select id="priceMode" class="full">
+              <option value="close" selected>Close Price</option>
+              <option value="last">Last Price</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 오른쪽: 가격/투자/레버리지 -->
+        <div class="rightCol">
+          <div class="field">
+            <label class="small">진입가</label>
+            <input type="number" id="entryPrice" placeholder="예: 41.2345" step="0.00000001" class="full">
+          </div>
+
+          <div class="field">
+            <label class="small">진입가 / 매도가</label>
+            <input type="number" id="closePrice" placeholder="예: 1.23456789" step="0.00000001" class="full">
+          </div>
+
+          <div class="field">
+            <label class="small">투자금(USDT)</label>
+            <input type="number" id="investment" placeholder="예: 100" step="0.01" class="full">
+          </div>
+
+          <div class="field">
+            <label class="small">레버리지(10/30/50)</label>
+            <input type="number" id="leverage" placeholder="10 / 30 / 50" step="1" class="full">
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="radioGroup">
+          <label><input type="radio" name="position" value="long" checked> 롱</label>
+          <label><input type="radio" name="position" value="short"> 숏</label>
+        </div>
+
+        <div class="row" style="justify-content:flex-end; flex:1;">
+          <button id="btnCalcRender" type="button">계산+렌더</button>
+          <button id="btnSavePng" type="button" class="secondary">PNG 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="result" class="w720">에셋 로딩 대기중...</div>
+    <canvas id="out" width="720" height="1184"></canvas>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
